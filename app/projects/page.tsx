@@ -4,7 +4,6 @@ import { ProjectCard } from '@/components/dashboard/project-card'
 import { Button } from '@/components/ui/button'
 import { Plus, Search, ListFilter as Filter } from 'lucide-react'
 
-// Mock data - in real app this would come from API
 const mockUser = {
   id: '1',
   name: 'John Doe',
@@ -19,79 +18,8 @@ const mockOrganization = {
   name: 'Acme Corp'
 }
 
-const mockProjects = [
-  {
-    id: '1',
-    workspace_id: '1',
-    name: 'Website Redesign',
-    key: 'WEB',
-    description: 'Complete overhaul of the company website with modern design and improved UX',
-    status: 'active' as const,
-    start_date: new Date('2024-01-01'),
-    end_date: new Date('2024-03-31'),
-    visibility: 'internal' as const,
-    created_by: '1',
-    created_at: new Date(),
-    members: [
-      { id: '1', project_id: '1', user_id: '1', role: 'pm' as const, user: mockUser },
-      { id: '2', project_id: '1', user_id: '2', role: 'contributor' as const, user: { ...mockUser, id: '2', name: 'Jane Smith' } },
-      { id: '3', project_id: '1', user_id: '3', role: 'contributor' as const, user: { ...mockUser, id: '3', name: 'Bob Wilson' } },
-    ]
-  },
-  {
-    id: '2',
-    workspace_id: '1',
-    name: 'Mobile App',
-    key: 'MOB',
-    description: 'Native mobile application for iOS and Android platforms',
-    status: 'planning' as const,
-    start_date: new Date('2024-02-01'),
-    end_date: new Date('2024-06-30'),
-    visibility: 'internal' as const,
-    created_by: '1',
-    created_at: new Date(),
-    members: [
-      { id: '4', project_id: '2', user_id: '1', role: 'pm' as const, user: mockUser },
-      { id: '5', project_id: '2', user_id: '4', role: 'contributor' as const, user: { ...mockUser, id: '4', name: 'Alice Johnson' } },
-    ]
-  },
-  {
-    id: '3',
-    workspace_id: '1',
-    name: 'API Integration',
-    key: 'API',
-    description: 'Integrate third-party APIs for enhanced functionality',
-    status: 'on_hold' as const,
-    start_date: new Date('2024-03-01'),
-    end_date: new Date('2024-05-31'),
-    visibility: 'internal' as const,
-    created_by: '1',
-    created_at: new Date(),
-    members: [
-      { id: '6', project_id: '3', user_id: '1', role: 'pm' as const, user: mockUser },
-    ]
-  },
-  {
-    id: '4',
-    workspace_id: '1',
-    name: 'Data Analytics Dashboard',
-    key: 'DASH',
-    description: 'Build comprehensive analytics dashboard for business insights',
-    status: 'completed' as const,
-    start_date: new Date('2023-10-01'),
-    end_date: new Date('2023-12-31'),
-    visibility: 'internal' as const,
-    created_by: '1',
-    created_at: new Date(),
-    members: [
-      { id: '7', project_id: '4', user_id: '1', role: 'pm' as const, user: mockUser },
-      { id: '8', project_id: '4', user_id: '2', role: 'contributor' as const, user: { ...mockUser, id: '2', name: 'Jane Smith' } },
-      { id: '9', project_id: '4', user_id: '5', role: 'contributor' as const, user: { ...mockUser, id: '5', name: 'Mike Davis' } },
-    ]
-  }
-]
-
-export default function ProjectsPage() {
+export default async function ProjectsPage() {
+  const projects: any[] = []
   return (
     <div className="min-h-screen bg-background">
       <Navbar user={mockUser} organization={mockOrganization} />
@@ -133,13 +61,13 @@ export default function ProjectsPage() {
 
             {/* Projects Grid */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {mockProjects.map((project) => (
+              {projects.map((project) => (
                 <ProjectCard key={project.id} project={project} />
               ))}
             </div>
 
             {/* Empty State (if no projects) */}
-            {mockProjects.length === 0 && (
+            {projects.length === 0 && (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <div className="mx-auto max-w-md">
                   <h3 className="text-lg font-semibold">No projects yet</h3>

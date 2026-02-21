@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Plus, TrendingUp, Users, SquareCheck as CheckSquare, Clock } from 'lucide-react'
 
-// Mock data - in real app this would come from API
 const mockUser = {
   id: '1',
   name: 'John Doe',
@@ -21,82 +20,9 @@ const mockOrganization = {
   name: 'Acme Corp'
 }
 
-const mockProjects = [
-  {
-    id: '1',
-    workspace_id: '1',
-    name: 'Website Redesign',
-    key: 'WEB',
-    description: 'Complete overhaul of the company website with modern design and improved UX',
-    status: 'active' as const,
-    start_date: new Date('2024-01-01'),
-    end_date: new Date('2024-03-31'),
-    visibility: 'internal' as const,
-    created_by: '1',
-    created_at: new Date(),
-    members: [
-      { id: '1', project_id: '1', user_id: '1', role: 'pm' as const, user: mockUser },
-      { id: '2', project_id: '1', user_id: '2', role: 'contributor' as const, user: { ...mockUser, id: '2', name: 'Jane Smith' } },
-    ]
-  },
-  {
-    id: '2',
-    workspace_id: '1',
-    name: 'Mobile App',
-    key: 'MOB',
-    description: 'Native mobile application for iOS and Android platforms',
-    status: 'planning' as const,
-    start_date: new Date('2024-02-01'),
-    end_date: new Date('2024-06-30'),
-    visibility: 'internal' as const,
-    created_by: '1',
-    created_at: new Date(),
-    members: [
-      { id: '3', project_id: '2', user_id: '1', role: 'pm' as const, user: mockUser },
-    ]
-  }
-]
-
-const mockTasks = [
-  {
-    id: '1',
-    project_id: 'WEB',
-    board_id: '1',
-    column_id: '1',
-    title: 'Design homepage mockups',
-    description: 'Create high-fidelity mockups for the new homepage design',
-    type: 'task' as const,
-    status: 'in_progress' as const,
-    priority: 'high' as const,
-    due_date: new Date('2024-01-15'),
-    created_by: '1',
-    assignee_id: '1',
-    sort_order: 1,
-    archived: false,
-    created_at: new Date(),
-    assignee: mockUser
-  },
-  {
-    id: '2',
-    project_id: 'WEB',
-    board_id: '1',
-    column_id: '1',
-    title: 'Set up development environment',
-    description: 'Configure local development setup with all necessary tools',
-    type: 'task' as const,
-    status: 'todo' as const,
-    priority: 'medium' as const,
-    due_date: new Date('2024-01-20'),
-    created_by: '1',
-    assignee_id: '2',
-    sort_order: 2,
-    archived: false,
-    created_at: new Date(),
-    assignee: { ...mockUser, id: '2', name: 'Jane Smith' }
-  }
-]
-
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const projects: any[] = []
+  const tasks: any[] = []
   return (
     <div className="min-h-screen bg-background">
       <Navbar user={mockUser} organization={mockOrganization} />
@@ -193,17 +119,25 @@ export default function DashboardPage() {
                     View All
                   </Button>
                 </div>
-                <div className="grid gap-4 md:grid-cols-2">
-                  {mockProjects.map((project) => (
-                    <ProjectCard key={project.id} project={project} />
-                  ))}
-                </div>
+                {projects.length > 0 ? (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {projects.map((project) => (
+                      <ProjectCard key={project.id} project={project} />
+                    ))}
+                  </div>
+                ) : (
+                  <Card>
+                    <CardContent className="flex flex-col items-center justify-center py-12">
+                      <p className="text-muted-foreground">No projects yet. Create your first project to get started.</p>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
 
               {/* My Tasks */}
               <div>
-                <TaskList 
-                  tasks={mockTasks} 
+                <TaskList
+                  tasks={tasks}
                   title="My Tasks"
                 />
               </div>

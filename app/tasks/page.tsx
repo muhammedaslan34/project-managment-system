@@ -9,7 +9,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Plus, Search, ListFilter as Filter, Calendar, User, CircleAlert as AlertCircle } from 'lucide-react'
 import { Task, Column } from '@/lib/types'
 
-// Mock data - in real app this would come from API
 const mockUser = {
   id: '1',
   name: 'John Doe',
@@ -24,126 +23,15 @@ const mockOrganization = {
   name: 'Acme Corp'
 }
 
-// Define the 3 columns for the tasks kanban board
 const taskColumns: Column[] = [
-  { id: 'active', board_id: 'tasks', name: 'Active Tasks', sort_order: 1 },
-  { id: 'processing', board_id: 'tasks', name: 'Processing Tasks', wip_limit: 5, sort_order: 2 },
-  { id: 'completed', board_id: 'tasks', name: 'Completed Tasks', sort_order: 3 },
-]
-
-const initialTasks: Task[] = [
-  {
-    id: '1',
-    project_id: 'WEB',
-    board_id: 'tasks',
-    column_id: 'active',
-    title: 'Design homepage mockups',
-    description: 'Create high-fidelity mockups for the new homepage design',
-    type: 'task',
-    status: 'todo',
-    priority: 'high',
-    due_date: new Date('2024-01-15'),
-    created_by: '1',
-    assignee_id: '1',
-    sort_order: 1,
-    archived: false,
-    created_at: new Date(),
-    assignee: mockUser
-  },
-  {
-    id: '2',
-    project_id: 'WEB',
-    board_id: 'tasks',
-    column_id: 'active',
-    title: 'Set up development environment',
-    description: 'Configure local development setup with all necessary tools',
-    type: 'task',
-    status: 'todo',
-    priority: 'medium',
-    due_date: new Date('2024-01-20'),
-    created_by: '1',
-    assignee_id: '1',
-    sort_order: 2,
-    archived: false,
-    created_at: new Date(),
-    assignee: mockUser
-  },
-  {
-    id: '3',
-    project_id: 'MOB',
-    board_id: 'tasks',
-    column_id: 'processing',
-    title: 'Implement user authentication',
-    description: 'Add login/logout functionality with JWT tokens',
-    type: 'story',
-    status: 'in_progress',
-    priority: 'urgent',
-    due_date: new Date('2024-01-12'),
-    created_by: '1',
-    assignee_id: '1',
-    sort_order: 1,
-    archived: false,
-    created_at: new Date(),
-    assignee: mockUser
-  },
-  {
-    id: '4',
-    project_id: 'API',
-    board_id: 'tasks',
-    column_id: 'processing',
-    title: 'API Integration testing',
-    description: 'Test all API endpoints and error handling',
-    type: 'task',
-    status: 'in_progress',
-    priority: 'high',
-    due_date: new Date('2024-01-18'),
-    created_by: '1',
-    assignee_id: '1',
-    sort_order: 2,
-    archived: false,
-    created_at: new Date(),
-    assignee: mockUser
-  },
-  {
-    id: '5',
-    project_id: 'DASH',
-    board_id: 'tasks',
-    column_id: 'completed',
-    title: 'Fix responsive layout issues',
-    description: 'Address mobile layout problems on the dashboard page',
-    type: 'bug',
-    status: 'done',
-    priority: 'low',
-    due_date: new Date('2024-01-10'),
-    created_by: '1',
-    assignee_id: '1',
-    sort_order: 1,
-    archived: false,
-    created_at: new Date(),
-    assignee: mockUser
-  },
-  {
-    id: '6',
-    project_id: 'WEB',
-    board_id: 'tasks',
-    column_id: 'completed',
-    title: 'Setup CI/CD pipeline',
-    description: 'Configure GitHub Actions for automated testing and deployment',
-    type: 'task',
-    status: 'done',
-    priority: 'medium',
-    due_date: new Date('2024-01-08'),
-    created_by: '1',
-    assignee_id: '1',
-    sort_order: 2,
-    archived: false,
-    created_at: new Date(),
-    assignee: mockUser
-  }
+  { id: 'todo', board_id: 'tasks', name: 'To Do', sort_order: 1 },
+  { id: 'in_progress', board_id: 'tasks', name: 'In Progress', wip_limit: 5, sort_order: 2 },
+  { id: 'review', board_id: 'tasks', name: 'Review', sort_order: 3 },
+  { id: 'done', board_id: 'tasks', name: 'Done', sort_order: 4 },
 ]
 
 export default function TasksPage() {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks)
+  const [tasks, setTasks] = useState<Task[]>([])
 
   const handleTaskMove = (taskId: string, newColumnId: string, newPosition: number) => {
     setTasks(prevTasks => {
@@ -155,15 +43,14 @@ export default function TasksPage() {
       const task = updatedTasks[taskIndex]
       const oldColumnId = task.column_id
 
-      // Update task status based on column
-      let newStatus: Task['status'] = task.status
-      if (newColumnId === 'active') {
-        newStatus = 'todo'
-      } else if (newColumnId === 'processing') {
-        newStatus = 'in_progress'
-      } else if (newColumnId === 'completed') {
-        newStatus = 'done'
+      const statusMap: Record<string, Task['status']> = {
+        'todo': 'todo',
+        'in_progress': 'in_progress',
+        'review': 'review',
+        'done': 'done'
       }
+
+      const newStatus = statusMap[newColumnId] || task.status
 
       // Update the task's column and status
       updatedTasks[taskIndex] = {
@@ -203,12 +90,12 @@ export default function TasksPage() {
     console.log(`Moved task ${taskId} to ${newColumnId} at position ${newPosition}`)
   }
 
-  // Calculate stats
-  const activeTasks = tasks.filter(task => task.column_id === 'active')
-  const processingTasks = tasks.filter(task => task.column_id === 'processing')
-  const completedTasks = tasks.filter(task => task.column_id === 'completed')
-  const overdueTasks = tasks.filter(task => 
-    task.due_date && new Date(task.due_date) < new Date() && task.column_id !== 'completed'
+  const todoTasks = tasks.filter(task => task.status === 'todo')
+  const inProgressTasks = tasks.filter(task => task.status === 'in_progress')
+  const reviewTasks = tasks.filter(task => task.status === 'review')
+  const doneTasks = tasks.filter(task => task.status === 'done')
+  const overdueTasks = tasks.filter(task =>
+    task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done'
   )
 
   return (
@@ -259,37 +146,47 @@ export default function TasksPage() {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Active</CardTitle>
+                  <CardTitle className="text-sm font-medium">To Do</CardTitle>
                   <div className="h-4 w-4 rounded-full bg-gray-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{activeTasks.length}</div>
+                  <div className="text-2xl font-bold">{todoTasks.length}</div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Processing</CardTitle>
+                  <CardTitle className="text-sm font-medium">In Progress</CardTitle>
                   <div className="h-4 w-4 rounded-full bg-blue-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{processingTasks.length}</div>
+                  <div className="text-2xl font-bold">{inProgressTasks.length}</div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Completed</CardTitle>
+                  <CardTitle className="text-sm font-medium">Review</CardTitle>
+                  <div className="h-4 w-4 rounded-full bg-yellow-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{reviewTasks.length}</div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Done</CardTitle>
                   <div className="h-4 w-4 rounded-full bg-green-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{completedTasks.length}</div>
+                  <div className="text-2xl font-bold">{doneTasks.length}</div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Overdue</CardTitle>
