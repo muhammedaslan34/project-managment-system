@@ -6,13 +6,15 @@ import { updateTaskSchema } from '@/lib/validators';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = getUserFromRequest(request);
     if (!user) {
       return unauthorizedResponse();
     }
+
+    const { id } = await params;
 
     const { data: task, error } = await supabase
       .from('tasks')
@@ -30,7 +32,7 @@ export async function GET(
         ),
         comments(id, content, created_at, user:users(id, full_name, avatar_url))
       `)
-      .eq('id', params.id)
+      .eq('id', id)
       .maybeSingle();
 
     if (error || !task) {
@@ -45,7 +47,7 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = getUserFromRequest(request);
@@ -53,6 +55,7 @@ export async function PATCH(
       return unauthorizedResponse();
     }
 
+    const { id } = await params;
     const body = await request.json();
     const validation = updateTaskSchema.safeParse(body);
 
@@ -63,7 +66,7 @@ export async function PATCH(
     const { data: existingTask, error: fetchError } = await supabase
       .from('tasks')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .maybeSingle();
 
     if (fetchError || !existingTask) {
@@ -73,7 +76,7 @@ export async function PATCH(
     const { data: task, error } = await supabase
       .from('tasks')
       .update(validation.data)
-      .eq('id', params.id)
+      .eq('id', id)
       .select(`
         *,
         project:projects(id, name),
@@ -130,7 +133,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = getUserFromRequest(request);
@@ -138,10 +141,12 @@ export async function DELETE(
       return unauthorizedResponse();
     }
 
+    const { id } = await params;
+
     const { data: existingTask, error: fetchError } = await supabase
       .from('tasks')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .maybeSingle();
 
     if (fetchError || !existingTask) {
@@ -151,7 +156,7 @@ export async function DELETE(
     const { error } = await supabase
       .from('tasks')
       .delete()
-      .eq('id', params.id);
+      .eq('id', id);
 
     if (error) {
       return errorResponse('Failed to delete task', 500);
@@ -160,7 +165,7 @@ export async function DELETE(
     await supabase.from('activity_logs').insert({
       user_id: user.userId,
       entity_type: 'task',
-      entity_id: params.id,
+      entity_id: id,
       action: 'deleted',
       changes: { task_title: existingTask.title },
     });

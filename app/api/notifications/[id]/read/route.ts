@@ -5,7 +5,7 @@ import { successResponse, unauthorizedResponse, errorResponse, notFoundResponse 
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = getUserFromRequest(request);
@@ -13,10 +13,12 @@ export async function PATCH(
       return unauthorizedResponse();
     }
 
+    const { id } = await params;
+
     const { data: notification, error } = await supabase
       .from('notifications')
       .update({ is_read: true })
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('user_id', user.userId)
       .select()
       .maybeSingle();

@@ -6,13 +6,15 @@ import { updateTeamSchema } from '@/lib/validators';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = getUserFromRequest(request);
     if (!user) {
       return unauthorizedResponse();
     }
+
+    const { id } = await params;
 
     const { data: team, error } = await supabase
       .from('teams')
@@ -27,7 +29,7 @@ export async function GET(
         ),
         projects:projects(id, name, status, priority, created_at)
       `)
-      .eq('id', params.id)
+      .eq('id', id)
       .maybeSingle();
 
     if (error || !team) {
@@ -42,7 +44,7 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = getUserFromRequest(request);
@@ -50,6 +52,7 @@ export async function PATCH(
       return unauthorizedResponse();
     }
 
+    const { id } = await params;
     const body = await request.json();
     const validation = updateTeamSchema.safeParse(body);
 
@@ -60,7 +63,7 @@ export async function PATCH(
     const { data: existingTeam, error: fetchError } = await supabase
       .from('teams')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .maybeSingle();
 
     if (fetchError || !existingTeam) {
@@ -70,7 +73,7 @@ export async function PATCH(
     const { data: team, error } = await supabase
       .from('teams')
       .update(validation.data)
-      .eq('id', params.id)
+      .eq('id', id)
       .select(`
         *,
         owner:users!teams_owner_id_fkey(id, full_name, email)
@@ -97,7 +100,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = getUserFromRequest(request);
@@ -105,10 +108,12 @@ export async function DELETE(
       return unauthorizedResponse();
     }
 
+    const { id } = await params;
+
     const { data: existingTeam, error: fetchError } = await supabase
       .from('teams')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .maybeSingle();
 
     if (fetchError || !existingTeam) {
@@ -118,7 +123,7 @@ export async function DELETE(
     const { error } = await supabase
       .from('teams')
       .delete()
-      .eq('id', params.id);
+      .eq('id', id);
 
     if (error) {
       return errorResponse('Failed to delete team', 500);
@@ -127,7 +132,7 @@ export async function DELETE(
     await supabase.from('activity_logs').insert({
       user_id: user.userId,
       entity_type: 'team',
-      entity_id: params.id,
+      entity_id: id,
       action: 'deleted',
       changes: { team_name: existingTeam.name },
     });

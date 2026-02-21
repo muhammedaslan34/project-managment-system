@@ -6,13 +6,15 @@ import { updateEventSchema } from '@/lib/validators';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = getUserFromRequest(request);
     if (!user) {
       return unauthorizedResponse();
     }
+
+    const { id } = await params;
 
     const { data: event, error } = await supabase
       .from('calendar_events')
@@ -28,7 +30,7 @@ export async function GET(
           user:users(id, full_name, email, avatar_url)
         )
       `)
-      .eq('id', params.id)
+      .eq('id', id)
       .maybeSingle();
 
     if (error || !event) {
@@ -43,7 +45,7 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = getUserFromRequest(request);
@@ -51,6 +53,7 @@ export async function PATCH(
       return unauthorizedResponse();
     }
 
+    const { id } = await params;
     const body = await request.json();
     const validation = updateEventSchema.safeParse(body);
 
@@ -61,7 +64,7 @@ export async function PATCH(
     const { data: existingEvent, error: fetchError } = await supabase
       .from('calendar_events')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .maybeSingle();
 
     if (fetchError || !existingEvent) {
@@ -71,7 +74,7 @@ export async function PATCH(
     const { data: event, error } = await supabase
       .from('calendar_events')
       .update(validation.data)
-      .eq('id', params.id)
+      .eq('id', id)
       .select(`
         *,
         team:teams(id, name),
@@ -100,7 +103,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = getUserFromRequest(request);
@@ -108,10 +111,12 @@ export async function DELETE(
       return unauthorizedResponse();
     }
 
+    const { id } = await params;
+
     const { data: existingEvent, error: fetchError } = await supabase
       .from('calendar_events')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .maybeSingle();
 
     if (fetchError || !existingEvent) {
@@ -121,7 +126,7 @@ export async function DELETE(
     const { error } = await supabase
       .from('calendar_events')
       .delete()
-      .eq('id', params.id);
+      .eq('id', id);
 
     if (error) {
       return errorResponse('Failed to delete event', 500);
@@ -130,7 +135,7 @@ export async function DELETE(
     await supabase.from('activity_logs').insert({
       user_id: user.userId,
       entity_type: 'event',
-      entity_id: params.id,
+      entity_id: id,
       action: 'deleted',
       changes: { event_title: existingEvent.title },
     });

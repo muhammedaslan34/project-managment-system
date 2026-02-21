@@ -6,13 +6,15 @@ import { updateProjectSchema } from '@/lib/validators';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = getUserFromRequest(request);
     if (!user) {
       return unauthorizedResponse();
     }
+
+    const { id } = await params;
 
     const { data: project, error } = await supabase
       .from('projects')
@@ -22,7 +24,7 @@ export async function GET(
         creator:users!projects_created_by_fkey(id, full_name, email, avatar_url),
         tasks(id, title, status, priority, assigned_to, due_date)
       `)
-      .eq('id', params.id)
+      .eq('id', id)
       .maybeSingle();
 
     if (error || !project) {
@@ -37,7 +39,7 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = getUserFromRequest(request);
@@ -45,6 +47,7 @@ export async function PATCH(
       return unauthorizedResponse();
     }
 
+    const { id } = await params;
     const body = await request.json();
     const validation = updateProjectSchema.safeParse(body);
 
@@ -55,7 +58,7 @@ export async function PATCH(
     const { data: existingProject, error: fetchError } = await supabase
       .from('projects')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .maybeSingle();
 
     if (fetchError || !existingProject) {
@@ -65,7 +68,7 @@ export async function PATCH(
     const { data: project, error } = await supabase
       .from('projects')
       .update(validation.data)
-      .eq('id', params.id)
+      .eq('id', id)
       .select(`
         *,
         team:teams(id, name),
@@ -93,7 +96,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = getUserFromRequest(request);
@@ -101,10 +104,12 @@ export async function DELETE(
       return unauthorizedResponse();
     }
 
+    const { id } = await params;
+
     const { data: existingProject, error: fetchError } = await supabase
       .from('projects')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .maybeSingle();
 
     if (fetchError || !existingProject) {
@@ -114,7 +119,7 @@ export async function DELETE(
     const { error } = await supabase
       .from('projects')
       .delete()
-      .eq('id', params.id);
+      .eq('id', id);
 
     if (error) {
       return errorResponse('Failed to delete project', 500);
@@ -123,7 +128,7 @@ export async function DELETE(
     await supabase.from('activity_logs').insert({
       user_id: user.userId,
       entity_type: 'project',
-      entity_id: params.id,
+      entity_id: id,
       action: 'deleted',
       changes: { project_name: existingProject.name },
     });

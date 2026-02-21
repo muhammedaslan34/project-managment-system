@@ -6,7 +6,7 @@ import { addTeamMemberSchema } from '@/lib/validators';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = getUserFromRequest(request);
@@ -14,6 +14,7 @@ export async function POST(
       return unauthorizedResponse();
     }
 
+    const { id } = await params;
     const body = await request.json();
     const validation = addTeamMemberSchema.safeParse(body);
 
@@ -26,7 +27,7 @@ export async function POST(
     const { data: existingMember } = await supabase
       .from('team_members')
       .select('id')
-      .eq('team_id', params.id)
+      .eq('team_id', id)
       .eq('user_id', user_id)
       .maybeSingle();
 
@@ -37,7 +38,7 @@ export async function POST(
     const { data: member, error } = await supabase
       .from('team_members')
       .insert({
-        team_id: params.id,
+        team_id: id,
         user_id,
         role,
       })
@@ -59,14 +60,14 @@ export async function POST(
       title: 'Added to Team',
       message: 'You have been added to a new team',
       related_entity_type: 'team',
-      related_entity_id: params.id,
+      related_entity_id: id,
       is_read: false,
     });
 
     await supabase.from('activity_logs').insert({
       user_id: user.userId,
       entity_type: 'team',
-      entity_id: params.id,
+      entity_id: id,
       action: 'member_added',
       changes: { added_user_id: user_id, role },
     });
