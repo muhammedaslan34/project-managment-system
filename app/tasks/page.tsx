@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Plus, Search, ListFilter as Filter, Calendar, User, CircleAlert as AlertCircle } from 'lucide-react'
 import { Task, Column } from '@/lib/types'
+import { CreateTaskDialog } from '@/components/forms/create-task-dialog'
 
 const mockUser = {
   id: '1',
@@ -115,10 +116,7 @@ export default function TasksPage() {
                   Drag tasks between columns to update their status.
                 </p>
               </div>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                New Task
-              </Button>
+              <CreateTaskDialog />
             </div>
 
             {/* Search and Filter Bar */}

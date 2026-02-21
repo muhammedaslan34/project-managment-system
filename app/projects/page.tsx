@@ -3,6 +3,7 @@ import { Sidebar } from '@/components/layout/sidebar'
 import { ProjectCard } from '@/components/dashboard/project-card'
 import { Button } from '@/components/ui/button'
 import { Plus, Search, ListFilter as Filter } from 'lucide-react'
+import { CreateProjectDialog } from '@/components/forms/create-project-dialog'
 
 const mockUser = {
   id: '1',
@@ -37,10 +38,7 @@ export default async function ProjectsPage() {
                   Manage and track all your projects in one place.
                 </p>
               </div>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                New Project
-              </Button>
+              <CreateProjectDialog />
             </div>
 
             {/* Search and Filter Bar */}
@@ -74,10 +72,7 @@ export default async function ProjectsPage() {
                   <p className="text-muted-foreground mb-4">
                     Get started by creating your first project.
                   </p>
-                  <Button>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Project
-                  </Button>
+                  <CreateProjectDialog />
                 </div>
               </div>
             )}

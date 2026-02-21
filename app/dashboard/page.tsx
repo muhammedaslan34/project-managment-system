@@ -5,6 +5,8 @@ import { TaskList } from '@/components/dashboard/task-list'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Plus, TrendingUp, Users, SquareCheck as CheckSquare, Clock } from 'lucide-react'
+import { CreateProjectDialog } from '@/components/forms/create-project-dialog'
+import { CreateTaskDialog } from '@/components/forms/create-task-dialog'
 
 const mockUser = {
   id: '1',
@@ -40,10 +42,10 @@ export default async function DashboardPage() {
                   Welcome back! Here&apos;s what&apos;s happening with your projects.
                 </p>
               </div>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                New Project
-              </Button>
+              <div className="flex gap-2">
+                <CreateTaskDialog />
+                <CreateProjectDialog />
+              </div>
             </div>
 
             {/* Stats Cards */}
