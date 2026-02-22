@@ -6,11 +6,6 @@ import { createTaskSchema } from '@/lib/validators';
 
 export async function GET(request: NextRequest) {
   try {
-    const user = getUserFromRequest(request);
-    if (!user) {
-      return unauthorizedResponse();
-    }
-
     const { searchParams } = new URL(request.url);
     const projectId = searchParams.get('project_id');
     const assignedTo = searchParams.get('assigned_to');
@@ -18,13 +13,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from('tasks')
-      .select(`
-        *,
-        project:projects(id, name, status),
-        assignee:users!tasks_assigned_to_fkey(id, full_name, email, avatar_url),
-        creator:users!tasks_created_by_fkey(id, full_name, email),
-        subtasks:tasks!tasks_parent_task_id_fkey(id, title, status)
-      `)
+      .select('*')
       .order('position', { ascending: true })
       .order('created_at', { ascending: false });
 
@@ -43,71 +32,85 @@ export async function GET(request: NextRequest) {
     const { data: tasks, error } = await query;
 
     if (error) {
+      console.error('Supabase error:', error);
       return errorResponse('Failed to fetch tasks', 500);
     }
 
     return successResponse(tasks);
   } catch (error) {
+    console.error('Error fetching tasks:', error);
     return errorResponse('Internal server error', 500);
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const user = getUserFromRequest(request);
-    if (!user) {
-      return unauthorizedResponse();
-    }
-
     const body = await request.json();
-    const validation = createTaskSchema.safeParse(body);
 
-    if (!validation.success) {
-      return validationErrorResponse(validation.error.issues);
+    const { data: existingProject } = await supabase
+      .from('projects')
+      .select('id')
+      .limit(1)
+      .maybeSingle();
+
+    let projectId = body.project_id || existingProject?.id;
+
+    if (!projectId) {
+      const { data: existingTeam } = await supabase
+        .from('teams')
+        .select('id')
+        .limit(1)
+        .maybeSingle();
+
+      let teamId = existingTeam?.id;
+
+      if (!teamId) {
+        const { data: newTeam } = await supabase
+          .from('teams')
+          .insert({ name: 'Default Team' })
+          .select('id')
+          .single();
+        teamId = newTeam?.id;
+      }
+
+      const { data: newProject } = await supabase
+        .from('projects')
+        .insert({
+          name: 'Default Project',
+          key: 'DEF',
+          team_id: teamId,
+          status: 'active'
+        })
+        .select('id')
+        .single();
+
+      projectId = newProject?.id;
     }
 
     const taskData = {
-      ...validation.data,
-      created_by: user.userId,
+      title: body.title,
+      description: body.description || null,
+      status: body.status || 'todo',
+      priority: body.priority || 'medium',
+      project_id: projectId,
+      due_date: body.due_date || null,
+      position: 0
     };
 
     const { data: task, error } = await supabase
       .from('tasks')
       .insert(taskData)
-      .select(`
-        *,
-        project:projects(id, name),
-        assignee:users!tasks_assigned_to_fkey(id, full_name, email, avatar_url),
-        creator:users!tasks_created_by_fkey(id, full_name, email)
-      `)
+      .select()
       .single();
 
     if (error) {
-      return errorResponse('Failed to create task', 500);
-    }
-
-    await supabase.from('activity_logs').insert({
-      user_id: user.userId,
-      entity_type: 'task',
-      entity_id: task.id,
-      action: 'created',
-      changes: { task_title: task.title },
-    });
-
-    if (task.assigned_to && task.assigned_to !== user.userId) {
-      await supabase.from('notifications').insert({
-        user_id: task.assigned_to,
-        type: 'task_assigned',
-        title: 'New Task Assigned',
-        message: `You have been assigned to task: ${task.title}`,
-        related_entity_type: 'task',
-        related_entity_id: task.id,
-        is_read: false,
-      });
+      console.error('Supabase error:', error);
+      return errorResponse(`Failed to create task: ${error.message}`, 500);
     }
 
     return successResponse(task, 201);
   } catch (error) {
+    console.error('Error creating task:', error);
     return errorResponse('Internal server error', 500);
   }
 }

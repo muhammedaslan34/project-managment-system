@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Plus, TrendingUp, Users, SquareCheck as CheckSquare, Clock } from 'lucide-react'
 import { CreateProjectDialog } from '@/components/forms/create-project-dialog'
 import { CreateTaskDialog } from '@/components/forms/create-task-dialog'
+import { supabase } from '@/lib/supabase'
 
 const mockUser = {
   id: '1',
@@ -23,8 +24,16 @@ const mockOrganization = {
 }
 
 export default async function DashboardPage() {
-  const projects: any[] = []
-  const tasks: any[] = []
+  const { data: projects } = await supabase
+    .from('projects')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  const { data: tasks } = await supabase
+    .from('tasks')
+    .select('*')
+    .order('created_at', { ascending: false })
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar user={mockUser} organization={mockOrganization} />
@@ -121,9 +130,9 @@ export default async function DashboardPage() {
                     View All
                   </Button>
                 </div>
-                {projects.length > 0 ? (
+                {projects && projects.length > 0 ? (
                   <div className="grid gap-4 md:grid-cols-2">
-                    {projects.map((project) => (
+                    {projects.map((project: any) => (
                       <ProjectCard key={project.id} project={project} />
                     ))}
                   </div>
@@ -139,7 +148,7 @@ export default async function DashboardPage() {
               {/* My Tasks */}
               <div>
                 <TaskList
-                  tasks={tasks}
+                  tasks={tasks || []}
                   title="My Tasks"
                 />
               </div>

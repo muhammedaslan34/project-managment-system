@@ -21,8 +21,7 @@ export function CreateProjectDialog() {
       key: formData.get('key'),
       description: formData.get('description'),
       start_date: formData.get('start_date'),
-      end_date: formData.get('end_date'),
-      workspace_id: '1'
+      end_date: formData.get('end_date')
     }
 
     try {

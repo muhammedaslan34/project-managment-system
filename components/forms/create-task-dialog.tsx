@@ -23,11 +23,10 @@ export function CreateTaskDialog({ projectId }: CreateTaskDialogProps) {
     const data = {
       title: formData.get('title'),
       description: formData.get('description'),
-      project_id: projectId || formData.get('project_id'),
-      priority: formData.get('priority'),
-      due_date: formData.get('due_date'),
-      board_id: '1',
-      column_id: '1'
+      project_id: projectId || formData.get('project_id') || undefined,
+      priority: formData.get('priority') || 'medium',
+      due_date: formData.get('due_date') || undefined,
+      status: 'todo'
     }
 
     try {
@@ -88,21 +87,6 @@ export function CreateTaskDialog({ projectId }: CreateTaskDialogProps) {
             />
           </div>
 
-          {!projectId && (
-            <div className="space-y-2">
-              <label htmlFor="project_id" className="text-sm font-medium">
-                Project ID
-              </label>
-              <input
-                id="project_id"
-                name="project_id"
-                type="text"
-                required
-                className="w-full px-3 py-2 border rounded-md"
-                placeholder="Enter project ID"
-              />
-            </div>
-          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

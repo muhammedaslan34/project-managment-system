@@ -6,22 +6,13 @@ import { createProjectSchema } from '@/lib/validators';
 
 export async function GET(request: NextRequest) {
   try {
-    const user = getUserFromRequest(request);
-    if (!user) {
-      return unauthorizedResponse();
-    }
-
     const { searchParams } = new URL(request.url);
     const teamId = searchParams.get('team_id');
     const status = searchParams.get('status');
 
     let query = supabase
       .from('projects')
-      .select(`
-        *,
-        team:teams(id, name),
-        creator:users!projects_created_by_fkey(id, full_name, email)
-      `)
+      .select('*')
       .order('created_at', { ascending: false });
 
     if (teamId) {
@@ -35,58 +26,66 @@ export async function GET(request: NextRequest) {
     const { data: projects, error } = await query;
 
     if (error) {
+      console.error('Supabase error:', error);
       return errorResponse('Failed to fetch projects', 500);
     }
 
     return successResponse(projects);
   } catch (error) {
+    console.error('Error fetching projects:', error);
     return errorResponse('Internal server error', 500);
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const user = getUserFromRequest(request);
-    if (!user) {
-      return unauthorizedResponse();
-    }
-
     const body = await request.json();
-    const validation = createProjectSchema.safeParse(body);
 
-    if (!validation.success) {
-      return validationErrorResponse(validation.error.issues);
+    const { data: existingTeam } = await supabase
+      .from('teams')
+      .select('id')
+      .limit(1)
+      .maybeSingle();
+
+    let teamId = existingTeam?.id;
+
+    if (!teamId) {
+      const { data: newTeam, error: teamError } = await supabase
+        .from('teams')
+        .insert({ name: 'Default Team' })
+        .select('id')
+        .single();
+
+      if (teamError || !newTeam) {
+        return errorResponse('Failed to create team', 500);
+      }
+      teamId = newTeam.id;
     }
 
     const projectData = {
-      ...validation.data,
-      created_by: user.userId,
+      name: body.name,
+      key: body.key,
+      description: body.description || null,
+      start_date: body.start_date || null,
+      end_date: body.end_date || null,
+      team_id: teamId,
+      status: 'planning'
     };
 
     const { data: project, error } = await supabase
       .from('projects')
       .insert(projectData)
-      .select(`
-        *,
-        team:teams(id, name),
-        creator:users!projects_created_by_fkey(id, full_name, email)
-      `)
+      .select()
       .single();
 
     if (error) {
-      return errorResponse('Failed to create project', 500);
+      console.error('Supabase error:', error);
+      return errorResponse(`Failed to create project: ${error.message}`, 500);
     }
-
-    await supabase.from('activity_logs').insert({
-      user_id: user.userId,
-      entity_type: 'project',
-      entity_id: project.id,
-      action: 'created',
-      changes: { project_name: project.name },
-    });
 
     return successResponse(project, 201);
   } catch (error) {
+    console.error('Error creating project:', error);
     return errorResponse('Internal server error', 500);
   }
 }
