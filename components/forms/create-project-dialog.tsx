@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
@@ -9,7 +9,20 @@ import { Plus } from 'lucide-react'
 export function CreateProjectDialog() {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
   const router = useRouter()
+
+  useEffect(() => {
+    if (open) {
+      const today = new Date().toISOString().split('T')[0]
+      setStartDate(today)
+
+      const oneMonthLater = new Date()
+      oneMonthLater.setMonth(oneMonthLater.getMonth() + 1)
+      setEndDate(oneMonthLater.toISOString().split('T')[0])
+    }
+  }, [open])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -106,6 +119,8 @@ export function CreateProjectDialog() {
                 id="start_date"
                 name="start_date"
                 type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
                 className="w-full px-3 py-2 border rounded-md"
               />
             </div>
@@ -118,6 +133,8 @@ export function CreateProjectDialog() {
                 id="end_date"
                 name="end_date"
                 type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
                 className="w-full px-3 py-2 border rounded-md"
               />
             </div>

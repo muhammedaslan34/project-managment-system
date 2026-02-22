@@ -62,14 +62,41 @@ export async function POST(request: NextRequest) {
       teamId = newTeam.id;
     }
 
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id')
+      .limit(1)
+      .maybeSingle();
+
+    let userId = existingUser?.id;
+
+    if (!userId) {
+      const { data: newUser, error: userError } = await supabase
+        .from('users')
+        .insert({
+          email: 'default@example.com',
+          password_hash: 'temp',
+          full_name: 'Default User',
+          role: 'admin'
+        })
+        .select('id')
+        .single();
+
+      if (userError || !newUser) {
+        return errorResponse('Failed to create user', 500);
+      }
+      userId = newUser.id;
+    }
+
     const projectData = {
       name: body.name,
-      key: body.key,
       description: body.description || null,
       start_date: body.start_date || null,
-      end_date: body.end_date || null,
+      due_date: body.end_date || body.due_date || null,
       team_id: teamId,
-      status: 'planning'
+      created_by: userId,
+      status: body.status || 'planning',
+      priority: body.priority || 'medium'
     };
 
     const { data: project, error } = await supabase

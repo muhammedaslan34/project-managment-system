@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
@@ -13,7 +13,16 @@ interface CreateTaskDialogProps {
 export function CreateTaskDialog({ projectId }: CreateTaskDialogProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [dueDate, setDueDate] = useState('')
   const router = useRouter()
+
+  useEffect(() => {
+    if (open) {
+      const oneWeekLater = new Date()
+      oneWeekLater.setDate(oneWeekLater.getDate() + 7)
+      setDueDate(oneWeekLater.toISOString().split('T')[0])
+    }
+  }, [open])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -113,6 +122,8 @@ export function CreateTaskDialog({ projectId }: CreateTaskDialogProps) {
                 id="due_date"
                 name="due_date"
                 type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
                 className="w-full px-3 py-2 border rounded-md"
               />
             </div>
